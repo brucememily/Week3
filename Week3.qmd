@@ -1,0 +1,49 @@
+---
+title: "Week 3 Notes"
+format: pdf
+editor: visual
+---
+
+# Week 3
+
+We want to be able to read in raw data and manipulate it, combine data sources (through SQL style joins), summarize data to glean insights, apply common analysis methods (predictive modeling), and communicate effectively (through dashboards). 
+
+# R Packages
+
+R packages already loaded (also referred to as libraries, modules, etc)\
+-CRAN houses all of the approved R Packages\
+-plenty of other packages on places like GitHub\
+
+"Base R" - package that come by default in RStudio (Global Environment)\
+-If there are the same functions in multiple packages, R will default to the most recent one\
+-base package has c(), data.frame(), list(),...  \
+
+Installing an R Package\
+-Install package using code, menus, or Packages Tab\
+-Tidyverse\
+-install.packages("dplyr") --> dplyr is part of the tidyverse\
+-download file from internet to local machine (typically only one time) and then bring into R\
+-once downloaded, use the library() or require() to access it, library("dplyr")\
+-library and require are very similar by library throws an error if no package and require returns FALSE \
+
+Set Packages to Load Automatically\
+-access .Rprofile file\
+-not recommended to do this for collaboration\
+
+Accessing a Package in R Session\
+- to see everything --> ls("package:dplyr") \
+
+Call Functions from Library\
+-Call without loading the full library with ::  \
+-if you just want one particular dataset\
+-dplyr::filter(iris, Species == "virginica")\
+-helps so you don't overwrite duplicate functions with another library\
+
+Example:  \
+-Package to create a .pdf from .qmd\
+-You can download repo locally using the terminal by doing >git clone https://  \
+-switch format at the top of the .qmd file to pdf instead of html\
+-install package in console install.packages("tinytex")\
+-run library("tinytex") to access, will now be in environment\
+-run install_tinytex - downloads a minimal tex so you can output to pdf\
+-cntrl+shift+k to export\
