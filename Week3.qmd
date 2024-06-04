@@ -1,7 +1,9 @@
 ---
 title: "Week 3 Notes"
-format: pdf
+format: html
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Week 3
@@ -47,3 +49,209 @@ Example:  \
 -run library("tinytex") to access, will now be in environment\
 -run install_tinytex - downloads a minimal tex so you can output to pdf\
 -cntrl+shift+k to export\
+
+terminal to push to git \
+git add . \
+then git commit -m "commit message" \
+then git push \
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+# Reading Delimited Data
+
+Reading a CSV file:
+```{r}
+library(readr)
+air_qaulity_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/AirQuality.csv")
+air_qaulity_data
+air_qaulity_data$`CO(GT)`[1:10]
+```
+
+Reading in a Fixed Width Field (FWF)
+```{r}
+cigarettes_data <-
+read_fwf("https://www4.stat.ncsu.edu/~online/datasets/cigarettes.txt",fwf_widths(c(17, 5, 9, 7, 4),
+                                                                              c("brand","tar","nicotine","weight","co")),skip = 1)
+#widths by counting: Alpine           14.1 0.86     0.9853 13.6
+```
+
+#Reading Excel Data
+
+If the file exists in your .qmd file's directory, we can read it in via:
+library(readxl) - added this in the console
+```{r}
+library(readxl)
+dry_bean_data <- read_excel("/Users/emily/Documents/ST558/Week 3/Dry_Bean_Dataset.xlsx")
+```
+
+We might want to read data from a specific sheet within the excel workbook.
+```{r}
+excel_sheets("/Users/emily/Documents/ST558/Week 3/Dry_Bean_Dataset.xlsx")
+```
+
+We can pull data from a specific sheet with the name or via integers (or NULL for 1st)
+```{r}
+citation_dry_bean_data <- read_excel("/Users/emily/Documents/ST558/Week 3/Dry_Bean_Dataset.xlsx",sheet = excel_sheets("/Users/emily/Documents/ST558/Week 3/Dry_Bean_Dataset.xlsx")[2])
+citation_dry_bean_data
+```
+NOTICE this didn't read in correctly.. this is because it is being treated as a column name, so we need to add col_names = FALSE to this
+```{r}
+citation_dry_bean_data <- read_excel("/Users/emily/Documents/ST558/Week 3/Dry_Bean_Dataset.xlsx",sheet = excel_sheets("/Users/emily/Documents/ST558/Week 3/Dry_Bean_Dataset.xlsx")[2],col_names = FALSE)
+citation_dry_bean_data
+#use cat() to print special characters and line break nicely
+cat(dplyr::pull(citation_dry_bean_data,1))
+```
+
+Reading only specific cells:
+```{r}
+dry_bean_range <- read_excel("/Users/emily/Documents/ST558/Week 3/Dry_Bean_Dataset.xlsx", range = cell_cols("A:B"))
+dry_bean_range
+```
+
+#Manipulating Data with dplyr
+
+```{r}
+library(dplyr)
+air_qaulity_data |> 
+  select(-starts_with("..."))
+#removes any columns that start with ...
+```
+
+Create some new variables
+
+```{r}
+library(dplyr)
+air_qaulity_data |> 
+  select(-starts_with("...")) |>
+#removes any columns that start with ...
+rename("co_gt" = 'CO(GT)') |>
+  #remove any equal to -200
+  filter(co_gt != -200) |>
+  #create new variables
+  mutate(mean_co_gt = mean(co_gt, na.rm = TRUE)) |> 
+  View()
+```
+
+If we want to take the mean of multiple columns:
+```{r}
+library(dplyr)
+air_qaulity_data |> 
+  select(-starts_with("...")) |>
+#removes any columns that start with ...
+rename("co_gt" = 'CO(GT)') |>
+  #remove any equal to -200
+  filter(co_gt != -200) |>
+  #create new variables
+  mutate(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}")) |>
+  View()
+```
+
+Add grouping functionality to take the mean and sd by each day
+```{r}
+library(dplyr)
+air_qaulity_data |> 
+  select(-starts_with("...")) |>
+#removes any columns that start with ...
+rename("co_gt" = 'CO(GT)') |>
+  #remove any equal to -200
+  filter(co_gt != -200) |>
+  group_by(Date) |>
+  #create new variables
+  mutate(across(where(is.numeric), list(mean = mean, sd = sd), .names = "{.col}_{.fn}")) |>
+  View()
+```
+
+# Manipulating Data with tidyr
+
+```{r}
+library(readr)
+temps_data <- read_table(file = "https://www4.stat.ncsu.edu/~online/datasets/cityTemps.txt")
+cols(
+  city = col_character(),
+  sun = col_double(),
+  mon = col_double(),
+  tue = col_double(),
+  wed = col_double(),
+  thr = col_double(),
+  fri = col_double(),
+  sat = col_double(),
+)
+temps_data
+```
+
+This data is in wide format, switch to long form with pivot_longer()
+```{r}
+library(tidyr)
+temps_data |>
+  pivot_longer(cols = 2:8,
+               names_to = "day",
+               values_to = "temp")
+```
+
+#Databases and Basic SQL
+
+Connect to .db from file
+```{r}
+library(DBI)
+con <- dbConnect(RSQLite::SQLite(), "/Users/emily/Documents/ST558/Week 3/lahman.db")
+dbListTables(con)
+```
+
+Access one of these tables with dplyr::tbl() function and use all usual dplyr code in place of SQL syntax
+```{r}
+library(dplyr)
+tbl(con, "Pitching") |> 
+  select(ends_with("ID")) |>
+  filter(yearID == 2010)
+```
+
+Notice how the number of rows isnt actually calculated here.. until we store a result in an object or do some calculation that requires all of the rows, it wont do the computation.
+
+```{r}
+library(dplyr)
+tbl(con, "Pitching") |> 
+  select(ends_with("ID")) |>
+  filter(yearID == 2010) |>
+  collect()
+```
+
+We can see the SQL code by
+```{r}
+library(dplyr)
+tbl(con, "Pitching") |> 
+  select(ends_with("ID")) |>
+  filter(yearID == 2010) |>
+  show_query()
+```
+
+You can write straight SQL code too
+```{r}
+tbl(con, sql(
+  "SELECT 'playerID', 'yearID', 'teamID', 'lgID'
+  FROM 'Pitching'
+  WHERE ('yearID' = 2010.0)")
+)
+```
+
+Disconnect from database now done
+```{r}
+dbDisconnect(con)
+```
+
+
+
